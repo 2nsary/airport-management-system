@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Weather & Conditions</h1>
+</div>
+
+<div class="weather-hero weather-bg-{{ airport.weather|lower|replace(' ', '-') }}">
+    <div class="weather-icon-big">
+        {% if airport.weather == 'Sunny' %}☀{% elif airport.weather == 'Rain' %}🌧{% elif airport.weather == 'Fog' %}🌫{% elif airport.weather == 'Storm' %}⛈{% else %}🌪{% endif %}
+    </div>
+    <div class="weather-name-big">{{ airport.weather }}</div>
+    <div class="weather-desc">
+        {% if airport.weather == 'Sunny' %}Clear skies — All operations normal
+        {% elif airport.weather == 'Rain' %}Precipitation active — Slight delays expected
+        {% elif airport.weather == 'Fog' %}Low visibility — Reduced runway capacity
+        {% elif airport.weather == 'Storm' %}Severe conditions — Takeoffs suspended
+        {% else %}Extreme hazard — Airport in emergency mode{% endif %}
+    </div>
+</div>
+
+<div class="weather-effects-grid">
+    <div class="effect-card">
+        <div class="effect-title">Operations Impact</div>
+        <div class="effect-body">
+            {% if airport.weather == 'Sunny' %}
+            <div class="effect-row effect-good"><span class="effect-dot dot-green"></span> All runways operational</div>
+            <div class="effect-row effect-good"><span class="effect-dot dot-green"></span> Normal takeoff/landing</div>
+            <div class="effect-row effect-good"><span class="effect-dot dot-green"></span> Standard fuel consumption</div>
+            {% elif airport.weather == 'Rain' %}
+            <div class="effect-row effect-warn"><span class="effect-dot dot-yellow"></span> Processing delays +15%</div>
+            <div class="effect-row effect-warn"><span class="effect-dot dot-yellow"></span> Fuel consumption +15%</div>
+            <div class="effect-row effect-good"><span class="effect-dot dot-green"></span> All runways operational</div>
+            {% elif airport.weather == 'Fog' %}
+            <div class="effect-row effect-warn"><span class="effect-dot dot-yellow"></span> Visibility reduced</div>
+            <div class="effect-row effect-warn"><span class="effect-dot dot-yellow"></span> Fuel consumption +5%</div>
+            <div class="effect-row effect-warn"><span class="effect-dot dot-yellow"></span> Emergency probability +2%</div>
+            {% elif airport.weather == 'Storm' %}
+            <div class="effect-row effect-bad"><span class="effect-dot dot-red"></span> Takeoffs SUSPENDED</div>
+            <div class="effect-row effect-bad"><span class="effect-dot dot-red"></span> Some runways closed</div>
+            <div class="effect-row effect-bad"><span class="effect-dot dot-red"></span> Fuel consumption +35%</div>
+            <div class="effect-row effect-bad"><span class="effect-dot dot-red"></span> Emergency probability +6%</div>
+            {% else %}
+            <div class="effect-row effect-crit"><span class="effect-dot dot-red pulse-dot"></span> ALL operations HALTED</div>
+            <div class="effect-row effect-crit"><span class="effect-dot dot-red pulse-dot"></span> All runways CLOSED</div>
+            <div class="effect-row effect-crit"><span class="effect-dot dot-red pulse-dot"></span> Fuel consumption +60%</div>
+            <div class="effect-row effect-crit"><span class="effect-dot dot-red pulse-dot"></span> Emergency probability +10%</div>
+            <div class="effect-row effect-crit"><span class="effect-dot dot-red pulse-dot"></span> Planes being redirected</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="effect-card">
+        <div class="effect-title">Runway Conditions</div>
+        <div class="effect-body">
+            {% for rid, rw in airport.runways.items() %}
+            <div class="effect-row">
+                <span class="effect-dot dot-{% if rw.status == 'FREE' %}green{% elif rw.status == 'BUSY' %}blue{% elif rw.status == 'CLOSED_WEATHER' %}red{% else %}yellow{% endif %}"></span>
+                <span>Runway {{ rid }}: <strong>{{ rw.status }}</strong></span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="effect-card">
+        <div class="effect-title">Weather Reference</div>
+        <div class="effect-body">
+            <div class="weather-ref-row"><span class="weather-ref-icon">☀</span><span>Sunny — Normal ops</span></div>
+            <div class="weather-ref-row"><span class="weather-ref-icon">🌧</span><span>Rain — Slight delays</span></div>
+            <div class="weather-ref-row"><span class="weather-ref-icon">🌫</span><span>Fog — Reduced visibility</span></div>
+            <div class="weather-ref-row"><span class="weather-ref-icon">⛈</span><span>Storm — No takeoffs</span></div>
+            <div class="weather-ref-row"><span class="weather-ref-icon">🌪</span><span>Extreme — Emergency mode</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="panel" style="margin-top:2rem">
+    <h2 class="panel-title">Weather Event Log</h2>
+    <div class="events-mini">
+        {% for ev in airport.events if ev.event_type == 'WEATHER' %}
+        <div class="event-row event-weather">
+            <span class="ev-time">{{ ev.timestamp }}</span>
+            <span class="ev-desc">{{ ev.description }}</span>
+        </div>
+        {% else %}
+        <div class="empty-state">No weather events recorded</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

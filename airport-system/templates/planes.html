@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Plane Management</h1>
+    <a href="{{ url_for('add_plane') }}" class="btn btn-success">✚ Add New Plane</a>
+</div>
+
+<div class="search-bar">
+    <form method="get" action="{{ url_for('planes') }}" class="search-form">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by ID, type, destination, state..." class="search-input">
+        <select name="filter" class="search-select">
+            <option value="all" {% if filt == 'all' %}selected{% endif %}>All Planes</option>
+            <option value="in_air" {% if filt == 'in_air' %}selected{% endif %}>In Air</option>
+            <option value="ground" {% if filt == 'ground' %}selected{% endif %}>On Ground</option>
+            <option value="waiting" {% if filt == 'waiting' %}selected{% endif %}>In Queue</option>
+            <option value="emergency" {% if filt == 'emergency' %}selected{% endif %}>Emergency</option>
+            <option value="crashed" {% if filt == 'crashed' %}selected{% endif %}>Crashed</option>
+        </select>
+        <button type="submit" class="btn btn-info">Search</button>
+    </form>
+</div>
+
+<div class="planes-grid">
+    {% for p in planes %}
+    <div class="plane-card state-card-{{ p.state|lower }} {% if p.emergency_status %}card-emergency-glow{% endif %}">
+        <div class="plane-header">
+            <span class="plane-id">{{ p.id }}</span>
+            <span class="plane-type-badge type-{{ p.plane_type|lower }}">{{ p.plane_type }}</span>
+        </div>
+        <div class="plane-state">
+            <span class="state-dot state-dot-{{ p.state|lower }}"></span>
+            <span class="state-text">{{ p.state }}</span>
+        </div>
+        {% if p.emergency_status %}
+        <div class="plane-emergency-banner">⚠ {{ p.emergency_type }}</div>
+        {% endif %}
+        <div class="plane-details">
+            <div class="detail-row">
+                <span class="detail-label">Destination</span>
+                <span class="detail-value">{{ p.destination }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Speed</span>
+                <span class="detail-value">{{ p.speed }} km/h</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Runway</span>
+                <span class="detail-value">{{ p.assigned_runway or '—' }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Wait Time</span>
+                <span class="detail-value">{{ p.waiting_time }} ticks</span>
+            </div>
+        </div>
+        <div class="fuel-section">
+            <div class="fuel-label">Fuel: {{ p.fuel }}%</div>
+            <div class="fuel-bar">
+                <div class="fuel-fill {% if p.fuel < 15 %}fuel-danger{% elif p.fuel < 30 %}fuel-warning{% else %}fuel-safe{% endif %}"
+                     style="width: {{ p.fuel }}%"></div>
+            </div>
+        </div>
+        <div class="plane-actions">
+            {% if p.state == 'ON_GROUND' %}
+            <form method="post" action="{{ url_for('plane_action', pid=p.id) }}" class="inline-form">
+                <input type="hidden" name="action" value="prepare">
+                <button class="btn btn-sm btn-success">▶ Prepare</button>
+            </form>
+            <form method="post" action="{{ url_for('plane_action', pid=p.id) }}" class="inline-form">
+                <input type="hidden" name="action" value="refuel">
+                <button class="btn btn-sm btn-info">⛽ Refuel</button>
+            </form>
+            <form method="post" action="{{ url_for('plane_action', pid=p.id) }}" class="inline-form">
+                <input type="hidden" name="action" value="maintenance">
+                <button class="btn btn-sm btn-warning">🔧 Maint.</button>
+            </form>
+            {% endif %}
+            {% if not p.emergency_status and p.state not in ('CRASHED','ON_GROUND','REFUEL','MAINTENANCE') %}
+            <form method="post" action="{{ url_for('plane_action', pid=p.id) }}" class="inline-form emerg-form">
+                <input type="hidden" name="action" value="emergency">
+                <select name="emergency_type" class="select-xs">
+                    <option value="FIRE">Fire</option>
+                    <option value="ENGINE_FAILURE">Engine</option>
+                    <option value="MEDICAL">Medical</option>
+                </select>
+                <button class="btn btn-sm btn-danger">⚠ Emergency</button>
+            </form>
+            {% endif %}
+            {% if p.state in ('ON_GROUND','CRASHED') %}
+            <form method="post" action="{{ url_for('plane_action', pid=p.id) }}" class="inline-form">
+                <input type="hidden" name="action" value="remove">
+                <button class="btn btn-sm btn-outline">✕ Remove</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <div class="empty-icon">✈</div>
+        <p>No planes found</p>
+        <a href="{{ url_for('add_plane') }}" class="btn btn-success">Add a Plane</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

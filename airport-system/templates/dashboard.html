@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Airport Dashboard</h1>
+    <div class="sim-controls">
+        {% if not airport.sim_running %}
+        <form method="post" action="{{ url_for('sim_control', action='start') }}" class="inline-form">
+            <button class="btn btn-success" type="submit">▶ Start</button>
+        </form>
+        <form method="post" action="{{ url_for('sim_control', action='generate') }}" class="inline-form">
+            <button class="btn btn-info" type="submit">✚ Generate Planes</button>
+        </form>
+        {% else %}
+            {% if airport.sim_paused %}
+            <form method="post" action="{{ url_for('sim_control', action='resume') }}" class="inline-form">
+                <button class="btn btn-success" type="submit">▶ Resume</button>
+            </form>
+            {% else %}
+            <form method="post" action="{{ url_for('sim_control', action='pause') }}" class="inline-form">
+                <button class="btn btn-warning" type="submit">❚❚ Pause</button>
+            </form>
+            {% endif %}
+        <form method="post" action="{{ url_for('sim_control', action='stop') }}" class="inline-form">
+            <button class="btn btn-danger" type="submit">■ Stop</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('sim_control', action='speed') }}" class="inline-form speed-form">
+            <select name="speed" class="select-sm">
+                <option value="0.5" {% if airport.sim_speed == 0.5 %}selected{% endif %}>0.5x</option>
+                <option value="1" {% if airport.sim_speed == 1.0 %}selected{% endif %}>1x</option>
+                <option value="2" {% if airport.sim_speed == 2.0 %}selected{% endif %}>2x</option>
+                <option value="3" {% if airport.sim_speed == 3.0 %}selected{% endif %}>3x</option>
+                <option value="5" {% if airport.sim_speed == 5.0 %}selected{% endif %}>5x</option>
+            </select>
+            <button class="btn btn-sm" type="submit">Set</button>
+        </form>
+        <form method="post" action="{{ url_for('sim_control', action='reset') }}" class="inline-form">
+            <button class="btn btn-outline" type="submit">↺ Reset</button>
+        </form>
+    </div>
+</div>
+
+<div class="status-grid">
+    <div class="status-card card-weather">
+        <div class="card-icon">
+            {% if airport.weather == 'Sunny' %}☀{% elif airport.weather == 'Rain' %}🌧{% elif airport.weather == 'Fog' %}🌫{% elif airport.weather == 'Storm' %}⛈{% else %}🌪{% endif %}
+        </div>
+        <div class="card-value">{{ airport.weather }}</div>
+        <div class="card-label">Current Weather</div>
+    </div>
+    <div class="status-card card-flights">
+        <div class="card-icon">✈</div>
+        <div class="card-value">{{ stats.active_flights }}</div>
+        <div class="card-label">In Air</div>
+    </div>
+    <div class="status-card card-runways">
+        <div class="card-icon">▬</div>
+        <div class="card-value">{{ stats.free_runways }}/3</div>
+        <div class="card-label">Runways Free</div>
+    </div>
+    <div class="status-card card-emergency {% if stats.emergency_now > 0 %}card-pulse{% endif %}">
+        <div class="card-icon">⚠</div>
+        <div class="card-value">{{ stats.emergency_now }}</div>
+        <div class="card-label">Emergencies</div>
+    </div>
+    <div class="status-card card-queue">
+        <div class="card-icon">⏳</div>
+        <div class="card-value">{{ stats.in_queue }}</div>
+        <div class="card-label">In Queue</div>
+    </div>
+    <div class="status-card card-total">
+        <div class="card-icon">◉</div>
+        <div class="card-value">{{ stats.total_planes }}</div>
+        <div class="card-label">Total Planes</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="panel panel-runways">
+        <h2 class="panel-title">Runway Status</h2>
+        <div class="runway-visual">
+            {% for rid, rw in airport.runways.items() %}
+            <div class="runway-strip runway-{{ rw.status|lower }}">
+                <div class="runway-id">RWY {{ rid }}</div>
+                <div class="runway-status-dot status-dot-{{ rw.status|lower }}"></div>
+                <div class="runway-info">
+                    <span class="runway-state">{{ rw.status }}</span>
+                    {% if rw.current_plane %}
+                    <span class="runway-plane">{{ rw.current_plane }}</span>
+                    {% endif %}
+                </div>
+                <div class="runway-line"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel panel-active">
+        <h2 class="panel-title">Active Flights</h2>
+        <div class="flights-list">
+            {% set active_planes = [] %}
+            {% for p in airport.planes.values() if p.state not in ('ON_GROUND','CRASHED') %}
+            <div class="flight-row state-{{ p.state|lower }}">
+                <span class="flight-id">{{ p.id }}</span>
+                <span class="flight-type type-{{ p.plane_type|lower }}">{{ p.plane_type }}</span>
+                <span class="flight-state">{{ p.state }}</span>
+                <div class="fuel-bar-mini">
+                    <div class="fuel-fill {% if p.fuel < 15 %}fuel-danger{% elif p.fuel < 30 %}fuel-warning{% else %}fuel-safe{% endif %}"
+                         style="width: {{ p.fuel }}%"></div>
+                </div>
+                <span class="fuel-pct">{{ p.fuel }}%</span>
+                {% if p.emergency_status %}
+                <span class="emergency-tag">{{ p.emergency_type }}</span>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-state">No active flights</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel panel-stats">
+        <h2 class="panel-title">Quick Stats</h2>
+        <div class="stats-mini">
+            <div class="stat-row"><span>Total Flights</span><span class="stat-val">{{ stats.total_flights }}</span></div>
+            <div class="stat-row"><span>Takeoffs</span><span class="stat-val">{{ stats.total_takeoffs }}</span></div>
+            <div class="stat-row"><span>Landings</span><span class="stat-val">{{ stats.total_landings }}</span></div>
+            <div class="stat-row"><span>Emergencies</span><span class="stat-val stat-danger">{{ stats.total_emergencies }}</span></div>
+            <div class="stat-row"><span>Crashes</span><span class="stat-val stat-danger">{{ stats.total_crashes }}</span></div>
+            <div class="stat-row"><span>Fuel Alerts</span><span class="stat-val stat-warning">{{ stats.fuel_alerts }}</span></div>
+            <div class="stat-row"><span>Delayed</span><span class="stat-val stat-warning">{{ stats.delayed_flights }}</span></div>
+            <div class="stat-row"><span>Avg Wait</span><span class="stat-val">{{ stats.avg_waiting }} ticks</span></div>
+        </div>
+    </div>
+
+    <div class="panel panel-recent">
+        <h2 class="panel-title">Recent Events</h2>
+        <div class="events-mini">
+            {% for ev in airport.events[:10] %}
+            <div class="event-row event-{{ ev.event_type|lower }}">
+                <span class="ev-time">{{ ev.timestamp }}</span>
+                <span class="ev-plane">{{ ev.plane_id }}</span>
+                <span class="ev-desc">{{ ev.description }}</span>
+            </div>
+            {% else %}
+            <div class="empty-state">No events yet</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

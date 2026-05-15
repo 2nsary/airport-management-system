@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Runway Management</h1>
+</div>
+<div class="runways-detail-grid">
+    {% for rid, rw in airport.runways.items() %}
+    <div class="runway-card runway-card-{{ rw.status|lower }}">
+        <div class="runway-card-header">
+            <div class="runway-big-id">RWY {{ rid }}</div>
+            <div class="runway-status-badge status-{{ rw.status|lower }}">{{ rw.status }}</div>
+        </div>
+        <div class="runway-visual-strip">
+            <div class="strip-line"></div>
+            <div class="strip-center">
+                {% if rw.status == 'BUSY' %}
+                <span class="strip-plane-icon">✈</span>
+                {% elif rw.status == 'CLOSED_WEATHER' %}
+                <span class="strip-closed-icon">✕</span>
+                {% elif rw.status == 'MAINTENANCE' %}
+                <span class="strip-maint-icon">🔧</span>
+                {% else %}
+                <span class="strip-free-icon">✓</span>
+                {% endif %}
+            </div>
+            <div class="strip-line"></div>
+        </div>
+        <div class="runway-details">
+            <div class="rw-detail">
+                <span class="rw-label">Current Plane</span>
+                <span class="rw-value">{{ rw.current_plane or 'None' }}</span>
+            </div>
+            <div class="rw-detail">
+                <span class="rw-label">Total Uses</span>
+                <span class="rw-value">{{ rw.usage_count }}</span>
+            </div>
+            <div class="rw-detail">
+                <span class="rw-label">Status</span>
+                <span class="rw-value">
+                    {% if rw.status == 'FREE' %}Available for operations
+                    {% elif rw.status == 'BUSY' %}Currently in use
+                    {% elif rw.status == 'MAINTENANCE' %}Under maintenance
+                    {% else %}Closed due to weather{% endif %}
+                </span>
+            </div>
+        </div>
+        {% if rw.current_plane and rw.current_plane in airport.planes %}
+        {% set cp = airport.planes[rw.current_plane] %}
+        <div class="runway-plane-info">
+            <div class="rpi-header">Active: {{ cp.id }}</div>
+            <div class="rpi-row"><span>Type:</span><span class="type-{{ cp.plane_type|lower }}">{{ cp.plane_type }}</span></div>
+            <div class="rpi-row"><span>State:</span><span>{{ cp.state }}</span></div>
+            <div class="rpi-row"><span>Dest:</span><span>{{ cp.destination }}</span></div>
+            <div class="rpi-row"><span>Fuel:</span>
+                <div class="fuel-bar-mini">
+                    <div class="fuel-fill {% if cp.fuel < 15 %}fuel-danger{% elif cp.fuel < 30 %}fuel-warning{% else %}fuel-safe{% endif %}"
+                         style="width: {{ cp.fuel }}%"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="panel" style="margin-top:2rem">
+    <h2 class="panel-title">Runway Usage Summary</h2>
+    <table class="data-table">
+        <thead>
+            <tr><th>Runway</th><th>Status</th><th>Current Plane</th><th>Total Uses</th></tr>
+        </thead>
+        <tbody>
+            {% for rid, rw in airport.runways.items() %}
+            <tr>
+                <td class="td-bold">RWY {{ rid }}</td>
+                <td><span class="status-pill status-{{ rw.status|lower }}">{{ rw.status }}</span></td>
+                <td>{{ rw.current_plane or '—' }}</td>
+                <td>{{ rw.usage_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

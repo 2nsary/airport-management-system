@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Analytics Dashboard</h1>
+</div>
+
+<div class="analytics-grid">
+    <div class="analytic-card ac-primary">
+        <div class="ac-icon">✈</div>
+        <div class="ac-value">{{ stats.total_flights }}</div>
+        <div class="ac-label">Total Flights Registered</div>
+    </div>
+    <div class="analytic-card ac-success">
+        <div class="ac-icon">▲</div>
+        <div class="ac-value">{{ stats.total_takeoffs }}</div>
+        <div class="ac-label">Successful Takeoffs</div>
+    </div>
+    <div class="analytic-card ac-info">
+        <div class="ac-icon">▼</div>
+        <div class="ac-value">{{ stats.total_landings }}</div>
+        <div class="ac-label">Successful Landings</div>
+    </div>
+    <div class="analytic-card ac-danger">
+        <div class="ac-icon">⚠</div>
+        <div class="ac-value">{{ stats.total_emergencies }}</div>
+        <div class="ac-label">Total Emergencies</div>
+    </div>
+    <div class="analytic-card ac-crash">
+        <div class="ac-icon">✕</div>
+        <div class="ac-value">{{ stats.total_crashes }}</div>
+        <div class="ac-label">Total Crashes</div>
+    </div>
+    <div class="analytic-card ac-warning">
+        <div class="ac-icon">⛽</div>
+        <div class="ac-value">{{ stats.fuel_alerts }}</div>
+        <div class="ac-label">Fuel Alerts Triggered</div>
+    </div>
+    <div class="analytic-card ac-delay">
+        <div class="ac-icon">⏳</div>
+        <div class="ac-value">{{ stats.delayed_flights }}</div>
+        <div class="ac-label">Delayed Operations</div>
+    </div>
+    <div class="analytic-card ac-wait">
+        <div class="ac-icon">◷</div>
+        <div class="ac-value">{{ stats.avg_waiting }}</div>
+        <div class="ac-label">Avg Wait (ticks)</div>
+    </div>
+</div>
+
+<div class="analytics-lower">
+    <div class="panel">
+        <h2 class="panel-title">Live Counts</h2>
+        <div class="live-stats-grid">
+            <div class="live-stat">
+                <span class="ls-dot dot-green"></span>
+                <span class="ls-label">Active (In Air)</span>
+                <span class="ls-value">{{ stats.active_flights }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-blue"></span>
+                <span class="ls-label">On Ground</span>
+                <span class="ls-value">{{ stats.grounded }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-yellow"></span>
+                <span class="ls-label">In Queue</span>
+                <span class="ls-value">{{ stats.in_queue }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-red"></span>
+                <span class="ls-label">Emergency Now</span>
+                <span class="ls-value">{{ stats.emergency_now }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-gray"></span>
+                <span class="ls-label">Crashed</span>
+                <span class="ls-value">{{ stats.crashed_now }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-green"></span>
+                <span class="ls-label">Runways Free</span>
+                <span class="ls-value">{{ stats.free_runways }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-blue"></span>
+                <span class="ls-label">Runways Busy</span>
+                <span class="ls-value">{{ stats.busy_runways }}</span>
+            </div>
+            <div class="live-stat">
+                <span class="ls-dot dot-red"></span>
+                <span class="ls-label">Runways Closed</span>
+                <span class="ls-value">{{ stats.closed_runways }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2 class="panel-title">Runway Usage Breakdown</h2>
+        <table class="data-table">
+            <thead>
+                <tr><th>Runway</th><th>Status</th><th>Uses</th><th>Usage Bar</th></tr>
+            </thead>
+            <tbody>
+                {% set max_usage = [1] %}
+                {% for rid, rw in runways.items() %}
+                    {% if rw.usage_count > max_usage[0] %}
+                        {% if max_usage.append(rw.usage_count) %}{% endif %}
+                    {% endif %}
+                {% endfor %}
+                {% for rid, rw in runways.items() %}
+                <tr>
+                    <td class="td-bold">RWY {{ rid }}</td>
+                    <td><span class="status-pill status-{{ rw.status|lower }}">{{ rw.status }}</span></td>
+                    <td>{{ rw.usage_count }}</td>
+                    <td>
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: {% if max_usage[-1] > 0 %}{{ (rw.usage_count / max_usage[-1] * 100)|int }}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel" style="margin-top:2rem">
+    <h2 class="panel-title">System Status</h2>
+    <div class="sys-info-grid">
+        <div class="sys-item"><span class="sys-label">Simulation</span><span class="sys-value">{% if airport.sim_running and not airport.sim_paused %}RUNNING{% elif airport.sim_paused %}PAUSED{% else %}STOPPED{% endif %}</span></div>
+        <div class="sys-item"><span class="sys-label">Speed</span><span class="sys-value">{{ airport.sim_speed }}x</span></div>
+        <div class="sys-item"><span class="sys-label">Tick Count</span><span class="sys-value">{{ stats.tick }}</span></div>
+        <div class="sys-item"><span class="sys-label">Weather</span><span class="sys-value">{{ airport.weather }}</span></div>
+        <div class="sys-item"><span class="sys-label">Total Planes</span><span class="sys-value">{{ stats.total_planes }}</span></div>
+    </div>
+</div>
+{% endblock %}

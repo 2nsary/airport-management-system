@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if refresh and refresh > 0 %}
+    <meta http-equiv="refresh" content="{{ refresh }}">
+    {% endif %}
+    <title>SkyControl — Smart Airport Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">✈</span>
+            <span class="nav-title">SkyControl</span>
+            <span class="nav-sub">ATC System</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if page == 'dashboard' %}active{% endif %}">
+                <span class="link-icon">◉</span> Dashboard
+            </a>
+            <a href="{{ url_for('planes') }}" class="nav-link {% if page == 'planes' %}active{% endif %}">
+                <span class="link-icon">✈</span> Planes
+            </a>
+            <a href="{{ url_for('runways') }}" class="nav-link {% if page == 'runways' %}active{% endif %}">
+                <span class="link-icon">▬</span> Runways
+            </a>
+            <a href="{{ url_for('weather') }}" class="nav-link {% if page == 'weather' %}active{% endif %}">
+                <span class="link-icon">☁</span> Weather
+            </a>
+            <a href="{{ url_for('history') }}" class="nav-link {% if page == 'history' %}active{% endif %}">
+                <span class="link-icon">☰</span> History
+            </a>
+            <a href="{{ url_for('analytics') }}" class="nav-link {% if page == 'analytics' %}active{% endif %}">
+                <span class="link-icon">◧</span> Analytics
+            </a>
+        </div>
+        <div class="nav-status">
+            <span class="weather-badge weather-{{ airport.weather|lower|replace(' ', '-') }}">
+                {% if airport.weather == 'Sunny' %}☀{% elif airport.weather == 'Rain' %}🌧{% elif airport.weather == 'Fog' %}🌫{% elif airport.weather == 'Storm' %}⛈{% else %}🌪{% endif %}
+                {{ airport.weather }}
+            </span>
+            <span class="sim-badge {% if airport.sim_running and not airport.sim_paused %}sim-active{% elif airport.sim_paused %}sim-paused{% else %}sim-off{% endif %}">
+                {% if airport.sim_running and not airport.sim_paused %}● LIVE
+                {% elif airport.sim_paused %}❚❚ PAUSED
+                {% else %}■ OFFLINE{% endif %}
+            </span>
+        </div>
+    </nav>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="alerts-sidebar">
+        <div class="alerts-header">
+            <span class="alerts-icon pulse-dot"></span>
+            <span>Live Alerts</span>
+        </div>
+        <div class="alerts-list">
+            {% for alert in airport.alerts[:12] %}
+            <div class="alert-item alert-{{ alert.severity }}">
+                <span class="alert-time">{{ alert.timestamp }}</span>
+                <span class="alert-msg">{{ alert.message }}</span>
+            </div>
+            {% endfor %}
+            {% if not airport.alerts %}
+            <div class="alert-item alert-info"><span class="alert-msg">No alerts yet</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <footer class="footer">
+        <span>SkyControl ATC v2.0 — Tick #{{ airport.tick_count }} — Speed: {{ airport.sim_speed }}x</span>
+    </footer>
+</body>
+</html>

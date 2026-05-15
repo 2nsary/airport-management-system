@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Event History</h1>
+    <form method="get" action="{{ url_for('history') }}" class="inline-form">
+        <select name="type" class="search-select">
+            <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Events</option>
+            {% for et in event_types %}
+            <option value="{{ et }}" {% if current_type == et %}selected{% endif %}>{{ et }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-info">Filter</button>
+    </form>
+</div>
+
+<div class="timeline-container">
+    {% for ev in events %}
+    <div class="timeline-item timeline-{{ ev.event_type|lower }}">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+            <div class="timeline-header">
+                <span class="timeline-time">{{ ev.timestamp }}</span>
+                <span class="timeline-type type-tag-{{ ev.event_type|lower }}">{{ ev.event_type }}</span>
+                {% if ev.plane_id != 'SYSTEM' %}
+                <span class="timeline-plane">{{ ev.plane_id }}</span>
+                {% endif %}
+            </div>
+            <div class="timeline-desc">{{ ev.description }}</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <div class="empty-icon">☰</div>
+        <p>No events recorded yet</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
